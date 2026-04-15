@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trò Chơi: Chiếc Hộp Bí Ẩn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap');
+
+        body {
+            font-family: 'Baloo 2', cursive;
+            background: linear-gradient(135deg, #1e3a8a 0%, #4c1d95 100%);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* Hiệu ứng rung lắc hộp */
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite;
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(3px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+            40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+
+        /* Hiệu ứng bóng nảy lên */
+        .pop-up {
+            animation: popUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popUp {
+            0% { transform: translateY(50px) scale(0); opacity: 0; }
+            100% { transform: translateY(-80px) scale(1.5); opacity: 1; }
+        }
+
+        /* Hiệu ứng hiện bảng chốt kiến thức */
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            0% { transform: translateY(30px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .box-container {
+            position: relative;
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .ball {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 80px;
+            opacity: 0;
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.3), 0 10px 20px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+
+        .ball.red { background: radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b); }
+        .ball.blue { background: radial-gradient(circle at 30% 30%, #4facfe, #00f2fe); }
+
+        .magic-box {
+            font-size: 100px;
+            line-height: 1;
+            z-index: 20;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .magic-box:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-6">
+
+    <!-- Header -->
+    <header class="text-center mt-4">
+        <h1 class="text-5xl font-extrabold text-yellow-300 drop-shadow-lg mb-2">🎁 CHIẾC HỘP BÍ ẨN 🎁</h1>
+        <p class="text-2xl text-blue-100" id="main-instruction">Mời 3 bạn đại diện lên bốc bóng nhé!</p>
+    </header>
+
+    <!-- Khu vực 3 chiếc hộp -->
+    <main class="flex flex-col md:flex-row gap-12 w-full max-w-5xl justify-center items-center mt-10" id="boxes-section">
+        
+        <!-- Hộp 1 -->
+        <div class="bg-white/10 p-6 rounded-3xl border-4 border-red-400 backdrop-blur-sm w-full md:w-1/3 text-center shadow-2xl relative">
+            <h2 class="text-2xl font-bold text-red-200 mb-1">Hộp Số 1</h2>
+            <p class="text-sm text-gray-300 mb-4">(Chứa 5 quả bóng ĐỎ)</p>
+            
+            <div class="box-container" id="container-1">
+                <div class="ball red" id="ball-1"></div>
+                <div class="magic-box" id="box-1">📦</div>
+            </div>
+
+            <button id="btn-1" onclick="handleBoxClick(1)" class="mt-6 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-full w-full text-xl shadow-lg transform transition active:scale-95">
+                <i class="fas fa-question-circle mr-2"></i> Dự đoán!
+            </button>
+        </div>
+
+        <!-- Hộp 2 -->
+        <div class="bg-white/10 p-6 rounded-3xl border-4 border-blue-400 backdrop-blur-sm w-full md:w-1/3 text-center shadow-2xl relative">
+            <h2 class="text-2xl font-bold text-blue-200 mb-1">Hộp Số 2</h2>
+            <p class="text-sm text-gray-300 mb-4">(Chứa 5 quả bóng XANH)</p>
+            
+            <div class="box-container" id="container-2">
+                <div class="ball blue" id="ball-2"></div>
+                <div class="magic-box" id="box-2">📦</div>
+            </div>
+
+            <button id="btn-2" onclick="handleBoxClick(2)" class="mt-6 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 px-6 rounded-full w-full text-xl shadow-lg transform transition active:scale-95 disabled:opacity-50">
+                <i class="fas fa-question-circle mr-2"></i> Dự đoán!
+            </button>
+        </div>
+
+        <!-- Hộp 3 -->
+        <div class="bg-white/10 p-6 rounded-3xl border-4 border-purple-400 backdrop-blur-sm w-full md:w-1/3 text-center shadow-2xl relative">
+            <h2 class="text-2xl font-bold text-purple-200 mb-1">Hộp Số 3</h2>
+            <p class="text-sm text-gray-300 mb-4">(3 bóng ĐỎ - 2 bóng XANH)</p>
+            
+            <div class="box-container" id="container-3">
+                <div class="ball" id="ball-3"></div>
+                <div class="magic-box" id="box-3">📦</div>
+            </div>
+
+            <button id="btn-3" onclick="handleBoxClick(3)" class="mt-6 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-bold py-3 px-6 rounded-full w-full text-xl shadow-lg transform transition active:scale-95 disabled:opacity-50">
+                <i class="fas fa-question-circle mr-2"></i> Dự đoán!
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Bảng chốt kiến thức (Ẩn lúc đầu) -->
+    <section id="conclusion-board" class="hidden w-full max-w-4xl mt-12 bg-white text-gray-800 rounded-3xl shadow-2xl p-8 mb-10 border-b-8 border-yellow-400">
+        <h2 class="text-4xl font-extrabold text-center text-indigo-700 mb-8"><i class="fas fa-lightbulb text-yellow-500 mr-3"></i> TỪ KHÓA BÀI HỌC</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-blue-50 p-6 rounded-2xl border border-blue-200">
+                <h3 class="text-xl font-bold text-blue-600 mb-2">1. Phép thử</h3>
+                <p class="text-lg">Hành động <b>"Nhắm mắt bốc 1 quả bóng"</b> mà chúng ta vừa làm.</p>
+            </div>
+            
+            <div class="bg-red-50 p-6 rounded-2xl border border-red-200">
+                <h3 class="text-xl font-bold text-red-600 mb-2">2. Kết quả</h3>
+                <p class="text-lg">Màu của quả bóng <b>thực tế rút ra được</b> (Đỏ hoặc Xanh).</p>
+            </div>
+
+            <div class="bg-purple-50 p-6 rounded-2xl border border-purple-200">
+                <h3 class="text-xl font-bold text-purple-600 mb-2">3. Biến cố</h3>
+                <p class="text-lg">Việc chúng ta <b>dự đoán</b> "Sẽ rút được bóng Đỏ" gọi là một biến cố.</p>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center bg-indigo-100 p-4 rounded-xl border border-indigo-300">
+            <p class="text-2xl font-bold text-indigo-800">
+                Hôm nay ta sẽ tìm hiểu: Biến cố nào <span class="text-green-600">CHẮC CHẮN</span>, <span class="text-red-600">KHÔNG THỂ</span> và <span class="text-yellow-600">NGẪU NHIÊN</span>!
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer trống để giữ layout đẹp -->
+    <div class="h-10"></div>
+
+    <script>
+        // Trạng thái của từng hộp (0: Chưa chơi, 1: Đang dự đoán, 2: Đã mở)
+        let boxStates = { 1: 0, 2: 0, 3: 0 };
+        let completedBoxes = 0;
+
+        // Dữ liệu bóng hộp 3
+        const box3Balls = ['red', 'red', 'red', 'blue', 'blue'];
+
+        const mainInstruction = document.getElementById('main-instruction');
+
+        function handleBoxClick(boxId) {
+            const state = boxStates[boxId];
+            const btn = document.getElementById(`btn-${boxId}`);
+            const box = document.getElementById(`box-${boxId}`);
+            
+            if (state === 0) {
+                // Bước 1: Bắt đầu dự đoán
+                boxStates[boxId] = 1;
+                box.classList.add('shake');
+                
+                // Đổi giao diện nút
+                btn.innerHTML = `<i class="fas fa-hand-sparkles mr-2"></i> Mở hộp ngay!`;
+                btn.classList.remove('from-red-500', 'from-blue-500', 'from-purple-500');
+                btn.classList.add('from-yellow-400', 'to-orange-500', 'text-gray-900', 'animate-pulse');
+                
+                // Đổi câu lệnh chính
+                mainInstruction.innerHTML = `<span class="text-yellow-300 font-bold text-3xl">Cả lớp hô to: Bạn sẽ bốc được bóng màu gì?</span>`;
+                
+            } else if (state === 1) {
+                // Bước 2: Bốc bóng
+                boxStates[boxId] = 2;
+                box.classList.remove('shake');
+                btn.classList.remove('animate-pulse');
+                
+                // Disable nút
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fas fa-check mr-2"></i> Đã hoàn thành`;
+                btn.classList.add('opacity-50', 'cursor-not-allowed', 'from-gray-500', 'to-gray-600', 'text-white');
+                btn.classList.remove('from-yellow-400', 'to-orange-500', 'text-gray-900');
+
+                // Hiển thị bóng
+                const ball = document.getElementById(`ball-${boxId}`);
+                
+                // Xử lý random cho hộp 3
+                if (boxId === 3) {
+                    const randomColor = box3Balls[Math.floor(Math.random() * box3Balls.length)];
+                    ball.classList.add(randomColor);
+                }
+
+                ball.classList.add('pop-up');
+                
+                // Đổi câu lệnh
+                mainInstruction.innerHTML = `<span class="text-green-300 font-bold text-3xl">Kết quả đã rõ! Tuyệt vời!</span>`;
+
+                // Kiểm tra xem đã mở hết 3 hộp chưa
+                completedBoxes++;
+                if (completedBoxes === 3) {
+                    setTimeout(showConclusion, 1500);
+                }
+            }
+        }
+
+        function showConclusion() {
+            mainInstruction.innerHTML = `<span class="text-white font-bold text-3xl">Cùng tổng kết lại các khái niệm nhé!</span>`;
+            const board = document.getElementById('conclusion-board');
+            board.classList.remove('hidden');
+            board.classList.add('fade-in-up');
+            
+            // Cuộn trang xuống phần tổng kết mượt mà
+            setTimeout(() => {
+                board.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
+    </script>
+</body>
+</html>
