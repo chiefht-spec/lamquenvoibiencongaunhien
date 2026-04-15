@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoạt Động 2: Truy Tìm Sự Thật</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap');
+
+        body {
+            font-family: 'Baloo 2', cursive;
+            background: linear-gradient(135deg, #0f766e 0%, #064e3b 100%); /* Nền xanh lục tông toán học */
+            color: white;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Xúc xắc CSS */
+        .dice-container {
+            width: 150px;
+            height: 150px;
+            perspective: 1000px;
+            margin: 20px auto;
+            position: relative;
+        }
+
+        .dice-box {
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2), 0 15px 35px rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 80px;
+            color: #333;
+            border: 4px solid #e2e8f0;
+            position: relative;
+        }
+
+        /* Các chấm xúc xắc bằng CSS Grid */
+        .dice-face {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            width: 80%;
+            height: 80%;
+            padding: 10px;
+            gap: 5px;
+        }
+
+        .dot {
+            background-color: #1f2937;
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 2px 2px 5px rgba(255,255,255,0.5);
+        }
+
+        /* Vị trí các chấm */
+        .d1 .dot:nth-child(1) { grid-column: 2; grid-row: 2; }
+        
+        .d2 .dot:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .d2 .dot:nth-child(2) { grid-column: 3; grid-row: 3; }
+        
+        .d3 .dot:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .d3 .dot:nth-child(2) { grid-column: 2; grid-row: 2; }
+        .d3 .dot:nth-child(3) { grid-column: 3; grid-row: 3; }
+        
+        .d4 .dot:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .d4 .dot:nth-child(2) { grid-column: 3; grid-row: 1; }
+        .d4 .dot:nth-child(3) { grid-column: 1; grid-row: 3; }
+        .d4 .dot:nth-child(4) { grid-column: 3; grid-row: 3; }
+        
+        .d5 .dot:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .d5 .dot:nth-child(2) { grid-column: 3; grid-row: 1; }
+        .d5 .dot:nth-child(3) { grid-column: 2; grid-row: 2; }
+        .d5 .dot:nth-child(4) { grid-column: 1; grid-row: 3; }
+        .d5 .dot:nth-child(5) { grid-column: 3; grid-row: 3; }
+        
+        .d6 .dot:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .d6 .dot:nth-child(2) { grid-column: 3; grid-row: 1; }
+        .d6 .dot:nth-child(3) { grid-column: 1; grid-row: 2; }
+        .d6 .dot:nth-child(4) { grid-column: 3; grid-row: 2; }
+        .d6 .dot:nth-child(5) { grid-column: 1; grid-row: 3; }
+        .d6 .dot:nth-child(6) { grid-column: 3; grid-row: 3; }
+
+        /* Nắp che xúc xắc (Cái ly) */
+        .cup {
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            width: calc(100% + 40px);
+            height: calc(100% + 40px);
+            background: linear-gradient(to bottom, #d97706, #b45309);
+            border-radius: 20px 20px 5px 5px;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 60px;
+            color: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+            transform-origin: bottom right;
+        }
+
+        .cup.open {
+            transform: rotate(60deg) translate(150px, -50px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Hiệu ứng lắc ly */
+        .shake-cup {
+            animation: shakeCup 0.4s infinite alternate;
+        }
+        @keyframes shakeCup {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(5px, 5px) rotate(5deg); }
+            50% { transform: translate(0, 0) rotate(0deg); }
+            75% { transform: translate(-5px, 5px) rotate(-5deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body class="p-6 w-full max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <header class="text-center mt-2 mb-6">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-teal-300 drop-shadow-md mb-2">
+            <i class="fas fa-search mr-2 text-yellow-400"></i> TRUY TÌM SỰ THẬT
+        </h1>
+        <p class="text-xl md:text-2xl text-teal-100 bg-black/20 inline-block px-6 py-2 rounded-full border border-teal-600 shadow-inner" id="main-instruction">
+            Bấm "Bắt đầu gieo" để thực hiện phép thử!
+        </p>
+    </header>
+
+    <main class="w-full flex flex-col items-center">
+        
+        <!-- Khu vực Xúc xắc & Nút điều khiển (Luôn ở trung tâm) -->
+        <div class="bg-white/10 p-8 rounded-3xl border-2 border-teal-500 backdrop-blur-md shadow-2xl flex flex-col items-center w-full max-w-md relative z-20">
+            
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4 tracking-wide text-center uppercase">Phép thử: Gieo Xúc Xắc</h2>
+            
+            <!-- Xúc xắc -->
+            <div class="dice-container">
+                <div class="dice-box" id="dice-face">
+                    <!-- Chấm xúc xắc sẽ được render bằng JS -->
+                    <span class="text-gray-400 text-4xl font-bold">?</span>
+                </div>
+                <!-- Ly úp -->
+                <div class="cup flex-col" id="cup">
+                    <i class="fas fa-question-circle mb-2"></i>
+                    <span class="text-sm font-bold tracking-widest">ÚP KÍN</span>
+                </div>
+            </div>
+
+            <!-- Nút điều khiển trung tâm -->
+            <button id="action-btn" onclick="nextStep()" class="mt-8 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-gray-900 font-extrabold py-4 px-8 rounded-full text-xl shadow-lg transform transition active:scale-95 w-full border-b-4 border-orange-700">
+                <i class="fas fa-play mr-2"></i> Bắt đầu gieo!
+            </button>
+        </div>
+
+        <!-- Khu vực hiển thị Biến cố (Nằm dưới, hiện dần ra) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full mt-8" id="events-section">
+            
+            <!-- Biến cố A (Ngẫu nhiên) -->
+            <div id="event-a-card" class="bg-blue-900/60 p-5 rounded-2xl border border-blue-400 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center mb-3">
+                        <span class="bg-blue-500 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-xl mr-3 shadow-md">A</span>
+                        <h3 class="text-xl font-bold text-blue-200">Biến cố A <span id="label-a" class="hidden ml-2 text-sm px-2 py-1 bg-blue-700/80 border border-blue-400 rounded-lg text-yellow-300">Ngẫu nhiên</span></h3>
+                    </div>
+                    <p class="text-lg text-white bg-blue-800/50 p-3 rounded-xl font-medium">"Mặt xuất hiện có <span class="text-yellow-300 font-bold underline">SỐ CHẴN</span>"</p>
+                </div>
+                <!-- Kết quả đánh giá A -->
+                <div id="result-a" class="mt-4 hidden p-3 rounded-xl text-base font-bold text-center shadow-inner transition-all duration-500">
+                    <!-- Nội dung JS nhúng vào -->
+                </div>
+            </div>
+
+            <!-- Biến cố B (Chắc chắn) -->
+            <div id="event-b-card" class="bg-green-900/60 p-5 rounded-2xl border border-green-400 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center mb-3">
+                        <span class="bg-green-500 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-xl mr-3 shadow-md">B</span>
+                        <h3 class="text-xl font-bold text-green-200">Biến cố B <span id="label-b" class="hidden ml-2 text-sm px-2 py-1 bg-green-700/80 border border-green-400 rounded-lg text-yellow-300">Chắc chắn</span></h3>
+                    </div>
+                    <p class="text-lg text-white bg-green-800/50 p-3 rounded-xl font-medium">"Mặt xuất hiện có số chấm <span class="text-yellow-300 font-bold underline">NHỎ HƠN 7</span>"</p>
+                </div>
+                <!-- Kết quả đánh giá B -->
+                <div id="result-b" class="mt-4 hidden p-3 rounded-xl text-base font-bold text-center shadow-inner transition-all duration-500">
+                    <!-- Nội dung JS nhúng vào -->
+                </div>
+            </div>
+
+            <!-- Biến cố C (Không thể) -->
+            <div id="event-c-card" class="bg-red-900/60 p-5 rounded-2xl border border-red-400 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center mb-3">
+                        <span class="bg-red-500 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-xl mr-3 shadow-md">C</span>
+                        <h3 class="text-xl font-bold text-red-200">Biến cố C <span id="label-c" class="hidden ml-2 text-sm px-2 py-1 bg-red-700/80 border border-red-400 rounded-lg text-yellow-300">Không thể</span></h3>
+                    </div>
+                    <p class="text-lg text-white bg-red-800/50 p-3 rounded-xl font-medium">"Mặt xuất hiện có đúng <span class="text-yellow-300 font-bold underline">7 CHẤM</span>"</p>
+                </div>
+                <!-- Kết quả đánh giá C -->
+                <div id="result-c" class="mt-4 hidden p-3 rounded-xl text-base font-bold text-center shadow-inner transition-all duration-500">
+                    <!-- Nội dung JS nhúng vào -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bảng chốt kết luận -->
+        <section id="conclusion-board" class="hidden w-full mt-8 bg-gradient-to-br from-yellow-100 to-white text-gray-900 rounded-3xl shadow-2xl p-6 md:p-8 border-4 border-yellow-400 z-30">
+            <h2 class="text-3xl font-extrabold text-center text-red-600 mb-6 uppercase"><i class="fas fa-star text-yellow-500 mr-2"></i> Ghi Nhớ Quan Trọng <i class="fas fa-star text-yellow-500 ml-2"></i></h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center text-xl font-semibold mb-4">
+                <div class="bg-blue-100 p-4 rounded-xl border-2 border-blue-400 shadow-sm hover:shadow-md transition">
+                    <h3 class="text-blue-800 font-bold mb-2">Biến cố ngẫu nhiên</h3>
+                    <p class="text-sm">Là biến cố <b class="text-blue-600">KHÔNG THỂ BIẾT TRƯỚC</b> được có xảy ra hay không.</p>
+                </div>
+                <div class="bg-green-100 p-4 rounded-xl border-2 border-green-400 shadow-sm hover:shadow-md transition">
+                    <h3 class="text-green-800 font-bold mb-2">Biến cố chắc chắn</h3>
+                    <p class="text-sm">Là biến cố biết trước được <b class="text-green-600">LUÔN XẢY RA</b>.</p>
+                </div>
+                <div class="bg-red-100 p-4 rounded-xl border-2 border-red-400 shadow-sm hover:shadow-md transition">
+                    <h3 class="text-red-800 font-bold mb-2">Biến cố không thể</h3>
+                    <p class="text-sm">Là biến cố biết trước được <b class="text-red-600">KHÔNG BAO GIỜ XẢY RA</b>.</p>
+                </div>
+            </div>
+
+            <div class="text-center text-base md:text-lg bg-orange-100 border border-orange-300 p-3 rounded-xl font-bold text-orange-800 shadow-inner">
+                <i class="fas fa-lightbulb text-orange-500 mr-2"></i> Ta chỉ xác định được một biến cố ngẫu nhiên có xảy ra hay không <span class="underline">sau khi đã biết kết quả</span> của phép thử!
+            </div>
+        </section>
+
+    </main>
+    <div class="h-10"></div>
+
+    <script>
+        // Các trạng thái của bài giảng: 0 = Chưa gieo, 1 = Đang lắc, 2 = Đã mở nắp
+        let state = 0; 
+        let currentDiceValue = 0;
+
+        const btn = document.getElementById('action-btn');
+        const instruction = document.getElementById('main-instruction');
+        const cup = document.getElementById('cup');
+        const diceFace = document.getElementById('dice-face');
+        
+        const resA = document.getElementById('result-a');
+        const resB = document.getElementById('result-b');
+        const resC = document.getElementById('result-c');
+        const conclusion = document.getElementById('conclusion-board');
+
+        // Hàm tạo mặt xúc xắc
+        function getDiceHTML(value) {
+            let dots = '';
+            for(let i = 0; i < value; i++) {
+                dots += '<span class="dot"></span>';
+            }
+            return `<div class="dice-face d${value}">${dots}</div>`;
+        }
+
+        function nextStep() {
+            if (state === 0 || state === 2) {
+                // BƯỚC 1: Bắt đầu gieo (Lắc ly)
+                // Ẩn các kết quả cũ nếu đang ở state 2 (gieo lại)
+                resA.classList.add('hidden');
+                resB.classList.add('hidden');
+                resC.classList.add('hidden');
+                conclusion.classList.add('hidden');
+                conclusion.classList.remove('fade-in');
+                cup.classList.remove('open');
+                diceFace.innerHTML = '<span class="text-gray-400 text-4xl font-bold">?</span>';
+                
+                // Hiệu ứng lắc
+                cup.classList.add('shake-cup');
+                instruction.innerHTML = '<i class="fas fa-spinner fa-spin text-yellow-300 mr-2"></i> Đang gieo xúc xắc...';
+                
+                // Đổi nút
+                btn.innerHTML = '<i class="fas fa-eye mr-2"></i> Mở Ly Xem Kết Quả!';
+                btn.className = "mt-8 bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white font-extrabold py-4 px-8 rounded-full text-xl shadow-lg transform transition active:scale-95 w-full border-b-4 border-blue-800";
+                
+                state = 1;
+            } 
+            else if (state === 1) {
+                // BƯỚC 2: Mở ly, hiển thị kết quả xúc xắc & đối chiếu biến cố ngay lập tức
+                cup.classList.remove('shake-cup');
+                cup.classList.add('open'); 
+                
+                // Random xúc xắc từ 1-6
+                currentDiceValue = Math.floor(Math.random() * 6) + 1;
+                diceFace.innerHTML = getDiceHTML(currentDiceValue);
+                
+                // 1. Đánh giá Biến cố A (Ngẫu nhiên - Số chẵn)
+                const isEven = currentDiceValue % 2 === 0;
+                resA.classList.remove('hidden');
+                if (isEven) {
+                    resA.innerHTML = `<i class="fas fa-check-circle mr-2 text-xl"></i> ĐÃ XẢY RA<br><span class="text-sm font-normal">(Vì ${currentDiceValue} là số chẵn)</span>`;
+                    resA.className = "mt-4 p-3 rounded-xl text-base font-bold text-center shadow-inner text-green-800 bg-green-200 border-2 border-green-500 fade-in";
+                } else {
+                    resA.innerHTML = `<i class="fas fa-times-circle mr-2 text-xl"></i> KHÔNG XẢY RA<br><span class="text-sm font-normal">(Vì ${currentDiceValue} là số lẻ)</span>`;
+                    resA.className = "mt-4 p-3 rounded-xl text-base font-bold text-center shadow-inner text-red-800 bg-red-200 border-2 border-red-500 fade-in";
+                }
+
+                // 2. Đánh giá Biến cố B (Chắc chắn - Nhỏ hơn 7)
+                resB.classList.remove('hidden');
+                resB.innerHTML = `<i class="fas fa-check-circle mr-2 text-xl"></i> LUÔN XẢY RA<br><span class="text-sm font-normal">(Vì mặt ${currentDiceValue} chấm < 7)</span>`;
+                resB.className = "mt-4 p-3 rounded-xl text-base font-bold text-center shadow-inner text-green-800 bg-green-200 border-2 border-green-500 fade-in";
+
+                // 3. Đánh giá Biến cố C (Không thể - 7 chấm)
+                resC.classList.remove('hidden');
+                resC.innerHTML = `<i class="fas fa-times-circle mr-2 text-xl"></i> KHÔNG THỂ<br><span class="text-sm font-normal">(Vì không có mặt 7 chấm)</span>`;
+                resC.className = "mt-4 p-3 rounded-xl text-base font-bold text-center shadow-inner text-red-800 bg-red-200 border-2 border-red-500 fade-in";
+
+
+                instruction.innerHTML = `Kết quả là <span class="text-yellow-300 font-bold text-3xl">${currentDiceValue} CHẤM</span>!`;
+                
+                // 4. Hiện bảng kết luận và gán nhãn cho các biến cố
+                conclusion.classList.remove('hidden');
+                conclusion.classList.add('fade-in');
+
+                document.getElementById('label-a').classList.remove('hidden');
+                document.getElementById('label-a').classList.add('inline-block', 'fade-in');
+                
+                document.getElementById('label-b').classList.remove('hidden');
+                document.getElementById('label-b').classList.add('inline-block', 'fade-in');
+                
+                document.getElementById('label-c').classList.remove('hidden');
+                document.getElementById('label-c').classList.add('inline-block', 'fade-in');
+
+                // 5. Đổi nút thành "Gieo lại"
+                btn.innerHTML = '<i class="fas fa-redo mr-2"></i> Gieo Lại Xúc Xắc';
+                btn.className = "mt-8 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-gray-900 font-extrabold py-4 px-8 rounded-full text-xl shadow-lg transform transition active:scale-95 w-full border-b-4 border-orange-700";
+                
+                state = 2;
+            }
+        }
+    </script>
+</body>
+</html>
