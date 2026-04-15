@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game: Đấu Trường Biến Cố</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png'), linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            color: white;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* Hiệu ứng rung khi sai */
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        /* Hiệu ứng nảy khi đúng */
+        .bounce-in {
+            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); opacity: 1; }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Nút bấm 3D */
+        .btn-3d {
+            transition: all 0.1s;
+            box-shadow: 0px 8px 0px 0px rgba(0,0,0,0.3);
+        }
+        .btn-3d:active:not(:disabled) {
+            transform: translateY(8px);
+            box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.3);
+        }
+
+        /* Thanh thời gian */
+        .progress-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: #4b5563;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #fbbf24, #ef4444);
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        /* Confetti */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f2d74e;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- MÀN HÌNH CHÍNH (START SCREEN) -->
+    <div id="start-screen" class="flex flex-col items-center justify-center text-center w-full max-w-3xl bounce-in">
+        <div class="bg-white/10 p-10 rounded-3xl border-4 border-yellow-400 shadow-[0_0_50px_rgba(250,204,21,0.3)] backdrop-blur-sm">
+            <h1 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-500 mb-4 drop-shadow-lg">
+                ĐẤU TRƯỜNG BIẾN CỐ
+            </h1>
+            <p class="text-xl md:text-2xl text-indigo-200 mb-8 font-semibold">
+                Vượt qua 8 thử thách Toán học từ sách giáo khoa để nhận Chứng nhận Huyền thoại!
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-left">
+                <div class="bg-indigo-900/50 p-4 rounded-xl border border-indigo-500">
+                    <i class="fas fa-bolt text-yellow-400 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-white">Điểm Tốc Độ</h3>
+                    <p class="text-sm text-indigo-200">Trả lời càng nhanh, điểm thưởng càng cao (Tối đa 50đ).</p>
+                </div>
+                <div class="bg-indigo-900/50 p-4 rounded-xl border border-indigo-500">
+                    <i class="fas fa-bullseye text-green-400 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-white">Điểm Bắn Tỉa</h3>
+                    <p class="text-sm text-indigo-200">Trả lời đúng ngay lần đầu tiên được cộng thêm 50đ.</p>
+                </div>
+                <div class="bg-indigo-900/50 p-4 rounded-xl border border-indigo-500">
+                    <i class="fas fa-redo text-blue-400 text-2xl mb-2"></i>
+                    <h3 class="font-bold text-white">Sửa Sai Ngay</h3>
+                    <p class="text-sm text-indigo-200">Nếu sai 1 ý, hệ thống sẽ sinh ra 1 ý tương tự để làm lại đến khi hiểu.</p>
+                </div>
+            </div>
+            <button onclick="startGame()" class="btn-3d bg-gradient-to-r from-green-400 to-green-600 text-white font-black text-3xl py-4 px-12 rounded-full uppercase tracking-wider hover:from-green-500 hover:to-green-700 w-full md:w-auto">
+                <i class="fas fa-play mr-2"></i> Vào Thi Đấu!
+            </button>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH CHƠI GAME (GAMEPLAY) -->
+    <div id="game-screen" class="hidden flex-col items-center w-full max-w-4xl">
+        
+        <!-- Header Game -->
+        <div class="w-full flex justify-between items-center mb-6 bg-black/30 p-4 rounded-2xl border border-indigo-500/50">
+            <div class="text-xl md:text-2xl font-bold text-yellow-300">
+                <i class="fas fa-flag-checkered mr-2"></i> Chặng: <span id="level-display" class="text-white">1/8</span>
+            </div>
+            <div class="text-xl md:text-2xl font-bold text-green-400">
+                <i class="fas fa-star mr-2"></i> Điểm: <span id="score-display" class="text-white">0</span>
+            </div>
+        </div>
+
+        <!-- Thanh thời gian -->
+        <div class="w-full mb-8">
+            <div class="flex justify-between text-sm font-bold text-indigo-200 mb-1">
+                <span><i class="fas fa-stopwatch mr-1"></i> Tốc độ chốt điểm</span>
+                <span id="time-text">15s</span>
+            </div>
+            <div class="progress-bar-container">
+                <div id="timer-bar" class="progress-bar"></div>
+            </div>
+        </div>
+
+        <!-- Khu vực câu hỏi -->
+        <div id="question-card" class="bg-white text-gray-900 w-full p-8 rounded-3xl shadow-2xl mb-8 relative border-b-8 border-indigo-600 transition-transform duration-300">
+            <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white px-6 py-2 rounded-full font-black text-lg shadow-lg border-2 border-white text-center whitespace-nowrap">
+                PHÉP THỬ & BIẾN CỐ
+            </div>
+            <div class="flex justify-center mt-2 mb-2">
+                <span id="question-source" class="bg-yellow-100 text-yellow-700 font-bold text-sm px-4 py-1 rounded-full uppercase tracking-wider border border-yellow-400 shadow-sm transition-colors duration-300">
+                    <!-- Nguồn bài tập SGK -->
+                </span>
+            </div>
+            <div id="question-context" class="text-lg md:text-xl font-semibold text-gray-600 mb-4 text-center leading-relaxed">
+                <!-- Nội dung ngữ cảnh -->
+            </div>
+            <div id="question-event" class="text-2xl md:text-4xl font-black text-center text-indigo-800 leading-tight transition-colors duration-300">
+                <!-- Nội dung biến cố -->
+            </div>
+            <div id="question-text" class="text-center mt-6 text-gray-500 font-bold italic text-lg">
+                <!-- Câu hỏi phụ (loại gì, đã xảy ra không) -->
+            </div>
+        </div>
+
+        <!-- Khu vực Nút lựa chọn (Được render động) -->
+        <div id="answer-buttons" class="grid w-full gap-6">
+            <!-- Buttons injected here by JS -->
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH KẾT THÚC (END SCREEN) -->
+    <div id="end-screen" class="hidden flex-col items-center justify-center text-center w-full max-w-3xl">
+        <div class="bg-white p-10 rounded-3xl border-8 border-yellow-400 shadow-2xl w-full relative overflow-hidden">
+            <!-- Nền trang trí -->
+            <div class="absolute top-0 left-0 w-full h-32 bg-indigo-600 rounded-t-2xl"></div>
+            
+            <div class="relative z-10">
+                <i class="fas fa-award text-8xl text-yellow-400 mb-4 drop-shadow-md"></i>
+                <h1 class="text-4xl md:text-5xl font-black text-indigo-900 mb-2">CHỨNG NHẬN HOÀN THÀNH</h1>
+                <p class="text-xl text-gray-600 font-bold mb-6">Đấu Trường Biến Cố Toán Học 7</p>
+                
+                <div class="bg-gray-100 p-6 rounded-2xl mb-6 border-2 border-gray-200 inline-block w-full max-w-md">
+                    <p class="text-lg text-gray-500 font-bold uppercase mb-1">Tổng điểm của bạn</p>
+                    <p id="final-score" class="text-6xl font-black text-orange-500 drop-shadow-sm mb-4">5800</p>
+                    <hr class="border-gray-300 mb-4">
+                    <p class="text-lg text-gray-500 font-bold uppercase mb-1">Danh hiệu đạt được</p>
+                    <p id="final-rank" class="text-3xl font-black text-indigo-700">Huyền Thoại Toán Học</p>
+                </div>
+                
+                <p id="final-message" class="text-xl text-green-600 font-bold mb-8 px-4">
+                    Tuyệt vời! Em đã nắm rất vững kiến thức trong sách giáo khoa!
+                </p>
+                
+                <button onclick="resetGame()" class="btn-3d bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-black text-2xl py-4 px-10 rounded-full hover:from-indigo-600 hover:to-purple-700">
+                    <i class="fas fa-sync-alt mr-2"></i> Chơi Lại Từ Đầu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PHẢN HỒI (ĐÚNG/SAI) -->
+    <div id="feedback-modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-50 p-4">
+        <div id="feedback-card" class="bg-white rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl transform scale-0 transition-transform duration-300">
+            <div id="feedback-icon" class="text-7xl mb-4"></div>
+            <h2 id="feedback-title" class="text-3xl font-black mb-2"></h2>
+            <div id="feedback-points" class="text-xl font-bold mb-4"></div>
+            <div class="bg-gray-100 p-4 rounded-xl border border-gray-200 text-gray-700 text-lg mb-6">
+                <span class="font-bold text-indigo-600">Giải thích: </span>
+                <span id="feedback-explanation"></span>
+            </div>
+            <button id="feedback-btn" onclick="closeFeedback()" class="btn-3d w-full font-black text-xl py-4 rounded-xl text-white">
+                Tiếp tục
+            </button>
+        </div>
+    </div>
+
+    <!-- Container cho Confetti -->
+    <div id="confetti-container" class="fixed inset-0 pointer-events-none z-40 hidden overflow-hidden"></div>
+
+    <script>
+        function randomElement(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        // --- DATA BÁM SÁT 100% CẤU TRÚC SGK ---
+        // Thêm trường "variant" cho mỗi câu hỏi để dùng khi học sinh trả lời sai
+        const standardOptions = ['Ngẫu nhiên', 'Chắc chắn', 'Không thể'];
+        const standardQuestionText = "Hỏi: Biến cố trên là chắc chắn, không thể hay ngẫu nhiên?";
+
+        const gameData = [
+            {
+                source: "Thực hành 1 (Trang 87)",
+                context: `Gieo một con xúc xắc hai lần liên tiếp và quan sát số chấm xuất hiện trong mỗi lần gieo.`,
+                options: standardOptions,
+                qText: standardQuestionText,
+                questions: [
+                    { 
+                        event: `A: "Tích số chấm xuất hiện trong hai lần gieo lớn hơn 1"`, ans: 'Ngẫu nhiên', exp: `Vì nếu hai lần gieo đều ra mặt 1 chấm thì tích là 1 (không lớn hơn 1). Các trường hợp khác thì tích lớn hơn 1.`,
+                        variant: { event: `Câu tương tự: "Tích số chấm xuất hiện trong hai lần gieo là một số lẻ"`, ans: 'Ngẫu nhiên', exp: `Vì nếu gieo ra (1,3) thì tích là 3 (lẻ), nhưng ra (2,3) thì tích là 6 (chẵn).` }
+                    },
+                    { 
+                        event: `B: "Tổng số chấm xuất hiện trong hai lần gieo lớn hơn 1"`, ans: 'Chắc chắn', exp: `Vì số chấm nhỏ nhất trên xúc xắc là 1, tổng hai lần gieo nhỏ nhất là 1 + 1 = 2 (luôn lớn hơn 1).`,
+                        variant: { event: `Câu tương tự: "Tổng số chấm xuất hiện trong hai lần gieo nhỏ hơn 15"`, ans: 'Chắc chắn', exp: `Vì mặt lớn nhất là 6, tổng hai lần lớn nhất cũng chỉ là 6 + 6 = 12 (luôn nhỏ hơn 15).` }
+                    },
+                    { 
+                        event: `C: "Tích số chấm xuất hiện trong hai lần gieo là 7"`, ans: 'Không thể', exp: `Vì các số chấm là số tự nhiên từ 1 đến 6, không có hai số nào trong phạm vi này nhân với nhau bằng 7.`,
+                        variant: { event: `Câu tương tự: "Tổng số chấm xuất hiện trong hai lần gieo là 13"`, ans: 'Không thể', exp: `Vì tổng lớn nhất có thể đạt được chỉ là 6 + 6 = 12.` }
+                    },
+                    { 
+                        event: `D: "Tổng số chấm xuất hiện trong hai lần gieo là 7"`, ans: 'Ngẫu nhiên', exp: `Vì có lúc tổng bằng 7 (ví dụ 1 và 6, 2 và 5), có lúc tổng khác 7 (ví dụ 1 và 1).`,
+                        variant: { event: `Câu tương tự: "Tổng số chấm xuất hiện trong hai lần gieo bằng 8"`, ans: 'Ngẫu nhiên', exp: `Vì có thể ra (2,6) tổng là 8, nhưng cũng có thể ra (1,1) tổng khác 8.` }
+                    }
+                ]
+            },
+            {
+                source: "Thực hành 2 (Trang 88)",
+                context: `Trong một ống cắm bút có 1 bút xanh, 1 bút đỏ và 1 bút tím. Lần lượt lấy ra 2 bút từ ống.`,
+                options: standardOptions,
+                qText: standardQuestionText,
+                questions: [
+                    { 
+                        event: `A: "Lấy được bút đỏ ở lần lấy thứ nhất"`, ans: 'Ngẫu nhiên', exp: `Lần thứ nhất ta có thể lấy trúng bút xanh, đỏ hoặc tím.`,
+                        variant: { event: `Câu tương tự: "Lấy được bút xanh ở lần lấy thứ hai"`, ans: 'Ngẫu nhiên', exp: `Tùy thuộc vào lần thứ nhất ta đã bốc màu gì, lần thứ hai ta vẫn có thể bốc trúng xanh hoặc đỏ/tím.` }
+                    },
+                    { 
+                        event: `Biến cố: "Lấy được 2 chiếc bút có màu giống nhau"`, ans: 'Không thể', exp: `Vì trong ống mỗi màu chỉ có đúng 1 chiếc, ta lấy ra 2 chiếc thì chắc chắn chúng phải khác màu.`,
+                        variant: { event: `Câu tương tự: "Lấy được 2 chiếc bút màu đỏ"`, ans: 'Không thể', exp: `Vì trong ống chỉ có duy nhất 1 bút màu đỏ, không thể lấy ra được tận 2 chiếc màu đỏ.` }
+                    },
+                    { 
+                        event: `Biến cố: "Lấy được 2 chiếc bút có màu khác nhau"`, ans: 'Chắc chắn', exp: `Vì trong ống không có 2 chiếc bút nào trùng màu nhau.`,
+                        variant: { event: `Câu tương tự: "Trong 2 chiếc bút lấy ra, không có chiếc nào màu vàng"`, ans: 'Chắc chắn', exp: `Vì trong ống vốn dĩ hoàn toàn không có bút màu vàng.` }
+                    }
+                ]
+            },
+            {
+                source: "Vận dụng 1 (Trang 88)",
+                context: `Một cửa hàng thống kê số máy tính bán được trong tuần. Số máy bán được mỗi ngày theo biểu đồ dao động từ ít nhất 8 máy đến nhiều nhất 14 máy. Chọn ngẫu nhiên 1 ngày.`,
+                options: standardOptions,
+                qText: standardQuestionText,
+                questions: [
+                    { 
+                        event: `A: "Cửa hàng bán được 10 máy vi tính trong ngày được chọn"`, ans: 'Ngẫu nhiên', exp: `Ngày đó có thể bán được đúng 10 máy (ví dụ thứ Hai), nhưng cũng có thể bán số khác.`,
+                        variant: { event: `Câu tương tự: "Cửa hàng bán được 12 máy vi tính trong ngày được chọn"`, ans: 'Ngẫu nhiên', exp: `Vì số lượng bán ra dao động, có ngày đạt 12 máy nhưng có ngày thì không.` }
+                    },
+                    { 
+                        event: `B: "Cửa hàng bán được ít hơn 7 máy vi tính trong ngày được chọn"`, ans: 'Không thể', exp: `Vì theo số liệu, ngày bán ế nhất cũng đã bán được 8 máy (lớn hơn 7).`,
+                        variant: { event: `Câu tương tự: "Cửa hàng bán được 5 máy vi tính trong ngày được chọn"`, ans: 'Không thể', exp: `Vì số máy bán ít nhất theo biểu đồ là 8 máy, không có ngày nào bán dưới 8 máy cả.` }
+                    },
+                    { 
+                        event: `C: "Cửa hàng bán được không quá 14 máy vi tính trong ngày được chọn"`, ans: 'Chắc chắn', exp: `Vì ngày bán chạy nhất cũng chỉ bán được tối đa 14 máy (tức là không vượt quá 14).`,
+                        variant: { event: `Câu tương tự: "Cửa hàng bán được ít nhất 5 máy vi tính trong ngày được chọn"`, ans: 'Chắc chắn', exp: `Vì ngày bán ế nhất đã bán được 8 máy, nên chắc chắn luôn lớn hơn mức 5 máy.` }
+                    }
+                ]
+            },
+            {
+                source: "Vận dụng 2 (Trang 88)",
+                context: `Xét các hiện tượng, sự kiện diễn ra trong đời sống và khoa học thực tế sau đây.`,
+                options: standardOptions,
+                qText: standardQuestionText,
+                questions: [
+                    { 
+                        event: `a) "Đến năm 2050, con người tìm được sự sống bên ngoài Trái Đất."`, ans: 'Ngẫu nhiên', exp: `Điều này có thể xảy ra nhưng cũng có thể không xảy ra, hiện tại ta không thể biết chắc.`,
+                        variant: { event: `Câu tương tự: "Ngày mai trời sẽ có mưa to tại thành phố của em."`, ans: 'Ngẫu nhiên', exp: `Mưa là hiện tượng thời tiết ngẫu nhiên, có thể xảy ra hoặc không xảy ra.` }
+                    },
+                    { 
+                        event: `b) "Ở Mũi Điện, ngày mai Mặt Trời sẽ mọc ở hướng Đông."`, ans: 'Chắc chắn', exp: `Theo quy luật tự nhiên bất biến, Mặt Trời luôn mọc ở hướng Đông.`,
+                        variant: { event: `Câu tương tự: "Năm sau, tháng 2 của năm không nhuận sẽ có 28 ngày."`, ans: 'Chắc chắn', exp: `Đó là quy luật bắt buộc của dương lịch.` }
+                    },
+                    { 
+                        event: `c) "Gặp một giáo viên trong trường em sinh năm 1900."`, ans: 'Không thể', exp: `Người sinh năm 1900 đến nay đã rất cao tuổi, không thể đang là giáo viên giảng dạy ở trường.`,
+                        variant: { event: `Câu tương tự: "Gặp một em học sinh lớp 7 hiện tại sinh năm 1980."`, ans: 'Không thể', exp: `Học sinh lớp 7 thường 12-13 tuổi, không thể sinh năm 1980 được.` }
+                    },
+                    { 
+                        event: `d) "Gieo một đồng xu cân đối 100 lần đều ra mặt sấp."`, ans: 'Ngẫu nhiên', exp: `Tuy xác suất cực kỳ nhỏ, nhưng về mặt lý thuyết điều này vẫn có khả năng xảy ra.`,
+                        variant: { event: `Câu tương tự: "Gieo xúc xắc 50 lần liên tiếp đều ra mặt 6 chấm."`, ans: 'Ngẫu nhiên', exp: `Rất hiếm gặp, nhưng nó không vi phạm quy luật nào nên vẫn có thể xảy ra.` }
+                    }
+                ]
+            },
+            {
+                source: "Bài tập 1 (Trang 88)",
+                context: `Tung một đồng xu hai lần. <br/><b class="text-red-500">Biết rằng kết quả thực tế là hai lần tung đều xuất hiện MẶT SẤP.</b>`,
+                options: ['Đã xảy ra', 'Không xảy ra'],
+                qText: "Hỏi: Dựa vào kết quả trên, biến cố này ĐÃ XẢY RA hay KHÔNG XẢY RA?",
+                questions: [
+                    { 
+                        event: `A: "Lần tung thứ hai xuất hiện mặt sấp"`, ans: 'Đã xảy ra', exp: `Vì thực tế đề cho là cả hai lần đều ra mặt sấp, nên lần thứ hai chắc chắn là sấp.`,
+                        variant: { event: `Câu tương tự: "Lần tung thứ nhất xuất hiện mặt sấp"`, ans: 'Đã xảy ra', exp: `Vì kết quả thực tế ghi nhận cả 2 lần đều ra sấp.` }
+                    },
+                    { 
+                        event: `B: "Xuất hiện hai mặt giống nhau trong hai lần tung"`, ans: 'Đã xảy ra', exp: `Vì thực tế ra 2 mặt sấp, tức là 2 mặt giống hệt nhau.`,
+                        variant: { event: `Câu tương tự: "Không có lần nào xuất hiện mặt ngửa"`, ans: 'Đã xảy ra', exp: `Đúng vậy, vì thực tế cả 2 lần đều là mặt sấp.` }
+                    },
+                    { 
+                        event: `C: "Có ít nhất 1 lần tung xuất hiện mặt ngửa"`, ans: 'Không xảy ra', exp: `Vì cả 2 lần đều ra sấp, không có lần nào xuất hiện mặt ngửa cả.`,
+                        variant: { event: `Câu tương tự: "Cả hai lần tung đều xuất hiện mặt ngửa"`, ans: 'Không xảy ra', exp: `Ngược lại hoàn toàn với thực tế (thực tế là 2 mặt sấp).` }
+                    }
+                ]
+            },
+            {
+                source: "Bài tập 2 (Trang 88)",
+                context: `Bạn Minh quay mũi tên ở một vòng quay có các ô ghi số từ 1 đến 6. Các ô được tô các màu khác nhau nhưng không có ô nào màu tím.`,
+                options: standardOptions,
+                qText: standardQuestionText,
+                questions: [
+                    { 
+                        event: `A: "Kim chỉ vào ô ghi số không nhỏ hơn 1"`, ans: 'Chắc chắn', exp: `Vì vòng quay chỉ có các số từ 1 đến 6, tất cả các số này đều lớn hơn hoặc bằng 1 (không nhỏ hơn 1).`,
+                        variant: { event: `Câu tương tự: "Kim chỉ vào ô ghi số nhỏ hơn 10"`, ans: 'Chắc chắn', exp: `Vì tất cả các số trên vòng quay (1 đến 6) đều nhỏ hơn 10.` }
+                    },
+                    { 
+                        event: `B: "Kim chỉ vào ô có màu trắng"`, ans: 'Ngẫu nhiên', exp: `Vì vòng quay có nhiều màu, mũi tên có thể dừng ở ô trắng hoặc dừng ở ô màu khác.`,
+                        variant: { event: `Câu tương tự: "Kim chỉ vào ô ghi số chẵn"`, ans: 'Ngẫu nhiên', exp: `Vòng quay có cả số chẵn và lẻ, nên kim có thể dừng ở số chẵn hoặc không.` }
+                    },
+                    { 
+                        event: `C: "Kim chỉ vào ô có màu tím"`, ans: 'Không thể', exp: `Vì trên vòng quay hoàn toàn không có ô nào tô màu tím.`,
+                        variant: { event: `Câu tương tự: "Kim chỉ vào ô ghi số 7"`, ans: 'Không thể', exp: `Vì số lớn nhất trên vòng quay chỉ là 6, không có số 7.` }
+                    },
+                    { 
+                        event: `D: "Kim chỉ vào ô ghi số lớn hơn 6"`, ans: 'Không thể', exp: `Vì số lớn nhất trên vòng quay chỉ là số 6.`,
+                        variant: { event: `Câu tương tự: "Kim chỉ vào ô có màu đen (biết vòng quay không có màu đen)"`, ans: 'Không thể', exp: `Vì màu đen không tồn tại trên vòng quay này.` }
+                    }
+                ]
+            },
+            {
+                source: "Bài tập 3 (Trang 89)",
+                context: `Một hộp có 3 chiếc bút mực và 1 chiếc bút chì. Lấy ra ngẫu nhiên cùng một lúc 2 bút từ hộp.`,
+                options: standardOptions,
+                qText: standardQuestionText,
+                questions: [
+                    { 
+                        event: `A: "Lấy được 2 chiếc bút mực"`, ans: 'Ngẫu nhiên', exp: `Vì ta có thể lấy trúng 2 bút mực, nhưng cũng có thể lấy trúng 1 bút mực và 1 bút chì.`,
+                        variant: { event: `Câu tương tự: "Lấy được 1 chiếc bút mực và 1 chiếc bút chì"`, ans: 'Ngẫu nhiên', exp: `Phụ thuộc vào lúc bốc, có thể xảy ra trường hợp này hoặc trường hợp bốc 2 bút mực.` }
+                    },
+                    { 
+                        event: `B: "Lấy được 2 chiếc bút chì"`, ans: 'Không thể', exp: `Vì trong hộp chỉ có đúng 1 chiếc bút chì, ta không thể lấy ra được 2 chiếc.`,
+                        variant: { event: `Câu tương tự: "Lấy được 3 chiếc bút mực"`, ans: 'Không thể', exp: `Bởi vì phép thử chỉ yêu cầu "lấy ra 2 bút", ta không thể lấy được 3 chiếc.` }
+                    },
+                    { 
+                        event: `C: "Có ít nhất 1 chiếc bút mực trong hai bút lấy ra"`, ans: 'Chắc chắn', exp: `Ta lấy 2 bút, mà hộp chỉ có 1 bút chì, nên kiểu gì cũng phải dính ít nhất 1 bút mực.`,
+                        variant: { event: `Câu tương tự: "Số bút chì lấy ra không vượt quá 1"`, ans: 'Chắc chắn', exp: `Vì trong hộp chỉ có tổng cộng 1 chiếc bút chì.` }
+                    },
+                    { 
+                        event: `D: "Có ít nhất 1 chiếc bút chì trong hai bút lấy ra"`, ans: 'Ngẫu nhiên', exp: `Vì ta có thể bốc trúng bút chì đó, hoặc bốc trúng 2 bút mực thì không có bút chì nào.`,
+                        variant: { event: `Câu tương tự: "Cả hai chiếc bút lấy ra đều không phải bút chì"`, ans: 'Ngẫu nhiên', exp: `Tương đương với việc lấy 2 bút mực, điều này có thể xảy ra.` }
+                    }
+                ]
+            },
+            {
+                source: "Bài tập 4 (Trang 89)",
+                context: `Một hộp có 1 quả bóng xanh, 1 bóng đỏ, 1 bóng vàng. Lấy ngẫu nhiên 1 quả, xem màu, trả lại hộp rồi lại lấy ra ngẫu nhiên 1 quả nữa.`,
+                options: standardOptions,
+                qText: standardQuestionText,
+                questions: [
+                    { 
+                        event: `A: "Quả bóng lấy ra lần thứ hai có màu đỏ"`, ans: 'Ngẫu nhiên', exp: `Vì lần hai vẫn lấy từ hộp có đủ 3 màu, nên quả thứ hai có thể là đỏ, xanh hoặc vàng.`,
+                        variant: { event: `Câu tương tự: "Lần đầu tiên lấy được quả bóng màu vàng"`, ans: 'Ngẫu nhiên', exp: `Lần đầu bốc ngẫu nhiên trong 3 quả, nên có thể ra màu vàng hoặc không.` }
+                    },
+                    { 
+                        event: `B: "Quả bóng lấy ra lần thứ hai có màu giống quả đã lấy lần đầu"`, ans: 'Ngẫu nhiên', exp: `Vì lấy xong lại bỏ vào, nên lần hai có thể bốc lại đúng màu cũ, hoặc bốc trúng màu khác.`,
+                        variant: { event: `Câu tương tự: "Quả bóng lấy ra lần thứ hai khác màu quả bóng lần đầu"`, ans: 'Ngẫu nhiên', exp: `Cũng giống trên, vì lấy có hoàn lại nên hoàn toàn có thể bốc trúng màu khác.` }
+                    },
+                    { 
+                        event: `C: "Quả bóng lấy ra lần đầu tiên có màu hồng"`, ans: 'Không thể', exp: `Vì trong hộp chỉ có bóng xanh, đỏ, vàng, không hề có bóng màu hồng.`,
+                        variant: { event: `Câu tương tự: "Lần thứ hai lấy được quả bóng màu đen"`, ans: 'Không thể', exp: `Vì hộp không có bóng màu đen.` }
+                    },
+                    { 
+                        event: `D: "Có ít nhất 1 lần lấy được quả bóng màu xanh"`, ans: 'Ngẫu nhiên', exp: `Vì có lúc ta lấy được màu xanh, nhưng cũng có lúc cả hai lần đều lấy ra màu đỏ hoặc vàng.`,
+                        variant: { event: `Câu tương tự: "Cả hai lần đều lấy được quả bóng màu đỏ"`, ans: 'Ngẫu nhiên', exp: `Do có trả lại bóng vào hộp, nên xác suất bốc trúng 2 lần màu đỏ là vẫn có thể xảy ra.` }
+                    }
+                ]
+            }
+        ];
+
+
+        // --- GAME STATE ---
+        let currentLevelIndex = 0;   // Chỉ số bài tập (0 -> 7)
+        let currentSubIndex = 0;     // Chỉ số câu hỏi trong bài (A, B, C, D)
+        let score = 0;
+        
+        let isPlayingVariant = false; // Trạng thái: Đang chơi câu phụ (sửa sai) hay câu chính
+        let timerInterval;
+        let timeRemaining = 15;
+        let isFirstTry = true; 
+
+        // --- DOM ELEMENTS ---
+        const screens = {
+            start: document.getElementById('start-screen'),
+            game: document.getElementById('game-screen'),
+            end: document.getElementById('end-screen')
+        };
+        const els = {
+            level: document.getElementById('level-display'),
+            score: document.getElementById('score-display'),
+            timerText: document.getElementById('time-text'),
+            timerBar: document.getElementById('timer-bar'),
+            qSource: document.getElementById('question-source'),
+            context: document.getElementById('question-context'),
+            event: document.getElementById('question-event'),
+            qText: document.getElementById('question-text'),
+            qCard: document.getElementById('question-card'),
+            btnContainer: document.getElementById('answer-buttons'),
+            
+            modal: document.getElementById('feedback-modal'),
+            modalCard: document.getElementById('feedback-card'),
+            mIcon: document.getElementById('feedback-icon'),
+            mTitle: document.getElementById('feedback-title'),
+            mPoints: document.getElementById('feedback-points'),
+            mExp: document.getElementById('feedback-explanation'),
+            mBtn: document.getElementById('feedback-btn')
+        };
+
+        // --- LOGIC FUNCTIONS ---
+        function switchScreen(screenName) {
+            Object.values(screens).forEach(s => {
+                s.classList.remove('flex');
+                s.classList.add('hidden');
+            });
+            screens[screenName].classList.remove('hidden');
+            screens[screenName].classList.add('flex');
+        }
+
+        function startGame() {
+            currentLevelIndex = 0;
+            currentSubIndex = 0;
+            score = 0;
+            isPlayingVariant = false;
+            updateScoreDisplay();
+            switchScreen('game');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const currentLevel = gameData[currentLevelIndex];
+            const currentQ = currentLevel.questions[currentSubIndex];
+            const activeQ = isPlayingVariant ? currentQ.variant : currentQ;
+            
+            // Cập nhật text trên cùng: Chặng 1/8 (Ý 1/4)
+            if (isPlayingVariant) {
+                els.level.innerHTML = `${currentLevelIndex + 1}/8 (Ý ${currentSubIndex + 1}/${currentLevel.questions.length}) <span class="text-orange-300">- Câu hỏi tương tự</span>`;
+                els.qSource.className = "bg-orange-100 text-orange-700 font-bold text-sm px-4 py-1 rounded-full uppercase tracking-wider border border-orange-400 shadow-sm transition-colors duration-300";
+                els.event.className = "text-2xl md:text-4xl font-black text-center text-orange-700 leading-tight transition-colors duration-300";
+            } else {
+                els.level.innerHTML = `${currentLevelIndex + 1}/8 (Ý ${currentSubIndex + 1}/${currentLevel.questions.length})`;
+                isFirstTry = true; // Chỉ reset first try khi vào câu chính thức
+                els.qSource.className = "bg-yellow-100 text-yellow-700 font-bold text-sm px-4 py-1 rounded-full uppercase tracking-wider border border-yellow-400 shadow-sm transition-colors duration-300";
+                els.event.className = "text-2xl md:text-4xl font-black text-center text-indigo-800 leading-tight transition-colors duration-300";
+            }
+            
+            // Hiển thị nội dung
+            els.qSource.innerText = `Chặng ${currentLevelIndex + 1}: ${currentLevel.source}`;
+            els.context.innerHTML = currentLevel.context;
+            els.event.innerHTML = activeQ.event;
+            els.qText.innerHTML = currentLevel.qText;
+            
+            renderButtons(currentLevel.options);
+            els.qCard.classList.remove('shake');
+            
+            resetTimer();
+        }
+
+        function renderButtons(options) {
+            els.btnContainer.innerHTML = '';
+            els.btnContainer.className = `grid gap-6 w-full ${options.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`;
+
+            options.forEach(opt => {
+                let colorClass = 'bg-gray-500 hover:bg-gray-600 border-gray-400';
+                if (opt === 'Ngẫu nhiên') colorClass = 'bg-blue-500 hover:bg-blue-600 border-blue-400';
+                else if (opt === 'Chắc chắn') colorClass = 'bg-green-500 hover:bg-green-600 border-green-400';
+                else if (opt === 'Không thể') colorClass = 'bg-red-500 hover:bg-red-600 border-red-400';
+                else if (opt === 'Đã xảy ra') colorClass = 'bg-green-500 hover:bg-green-600 border-green-400';
+                else if (opt === 'Không xảy ra') colorClass = 'bg-red-500 hover:bg-red-600 border-red-400';
+
+                const btn = document.createElement('button');
+                btn.className = `btn-3d ${colorClass} text-white font-black text-2xl py-6 rounded-2xl border-b-4 transition-transform`;
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt);
+                els.btnContainer.appendChild(btn);
+            });
+        }
+
+        function resetTimer() {
+            timeRemaining = 15;
+            els.timerText.innerText = `${timeRemaining}s`;
+            els.timerBar.style.width = '100%';
+            els.timerBar.style.background = 'linear-gradient(90deg, #fbbf24, #ef4444)';
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeRemaining -= 0.1; 
+                if (timeRemaining <= 0) {
+                    timeRemaining = 0;
+                    clearInterval(timerInterval);
+                }
+                
+                els.timerText.innerText = `${Math.ceil(timeRemaining)}s`;
+                const percentage = (timeRemaining / 15) * 100;
+                els.timerBar.style.width = `${percentage}%`;
+                
+                if (timeRemaining < 5) els.timerBar.style.background = '#ef4444'; 
+            }, 100);
+        }
+
+        function checkAnswer(userChoice) {
+            clearInterval(timerInterval); 
+            const currentLevel = gameData[currentLevelIndex];
+            const currentQ = currentLevel.questions[currentSubIndex];
+            const activeQ = isPlayingVariant ? currentQ.variant : currentQ;
+            
+            const isCorrect = (userChoice === activeQ.ans);
+            
+            if (isCorrect) {
+                let basePoints = 100;
+                let firstTryBonus = isFirstTry ? 50 : 0;
+                let speedBonus = Math.floor((timeRemaining / 15) * 50);
+                
+                let pointsEarned = basePoints + firstTryBonus + speedBonus;
+                score += pointsEarned;
+                updateScoreDisplay();
+
+                showFeedback(true, pointsEarned, firstTryBonus, speedBonus, activeQ.exp);
+            } else {
+                els.qCard.classList.remove('shake');
+                void els.qCard.offsetWidth; 
+                els.qCard.classList.add('shake');
+                
+                isFirstTry = false; 
+                showFeedback(false, 0, 0, 0, activeQ.exp);
+            }
+        }
+
+        function updateScoreDisplay() {
+            let current = parseInt(els.score.innerText);
+            let target = score;
+            let step = Math.ceil((target - current) / 10);
+            
+            if(current === target) return;
+
+            let counter = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(counter);
+                }
+                els.score.innerText = current;
+            }, 30);
+        }
+
+        function showFeedback(isCorrect, points, ftBonus, spBonus, explanation) {
+            els.modal.classList.remove('hidden');
+            setTimeout(() => {
+                els.modalCard.classList.remove('scale-0');
+                els.modalCard.classList.add('scale-100');
+            }, 10);
+
+            els.mExp.innerHTML = explanation;
+
+            if (isCorrect) {
+                els.mIcon.innerHTML = '<i class="fas fa-check-circle text-green-500"></i>';
+                els.mTitle.innerHTML = '<span class="text-green-600">CHÍNH XÁC!</span>';
+                
+                let pointHtml = `<span class="text-2xl text-orange-500 font-black">+${points} Điểm</span><br>`;
+                pointHtml += `<span class="text-sm text-gray-500">(Cơ bản: 100`;
+                if(ftBonus > 0) pointHtml += ` | Bắn tỉa: +${ftBonus}`;
+                pointHtml += ` | Tốc độ: +${spBonus})</span>`;
+                
+                els.mPoints.innerHTML = pointHtml;
+                
+                const isLastSub = (currentSubIndex === gameData[currentLevelIndex].questions.length - 1);
+                const isLastLevel = (currentLevelIndex === gameData.length - 1);
+
+                if (isLastSub && !isLastLevel) {
+                    els.mBtn.innerText = "Sang Chặng Tiếp Theo";
+                } else if (isLastSub && isLastLevel) {
+                    els.mBtn.innerText = "Xem Chứng Nhận!";
+                } else {
+                    els.mBtn.innerText = "Tiếp Tục (Ý Tiếp Theo)";
+                }
+
+                els.mBtn.className = "btn-3d w-full font-black text-xl py-4 rounded-xl text-white bg-green-500 hover:bg-green-600 border-b-4 border-green-700";
+                
+                els.mBtn.onclick = () => {
+                    closeFeedback();
+                    
+                    // Xóa trạng thái câu phụ, đi tiếp SGK bình thường
+                    isPlayingVariant = false;
+                    
+                    currentSubIndex++;
+                    if (currentSubIndex >= gameData[currentLevelIndex].questions.length) {
+                        currentSubIndex = 0;
+                        currentLevelIndex++;
+                    }
+
+                    if (currentLevelIndex < gameData.length) {
+                        loadQuestion();
+                    } else {
+                        showEndScreen();
+                    }
+                };
+            } else {
+                els.mIcon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
+                els.mTitle.innerHTML = '<span class="text-red-600">CHƯA ĐÚNG RỒI!</span>';
+                
+                if (!isPlayingVariant) {
+                    els.mPoints.innerHTML = `<span class="text-lg text-red-500 font-bold">Em đã bị mất điểm Bắn Tỉa. Hệ thống sẽ đổi sang một câu hỏi TƯƠNG TỰ để em làm lại nhé!</span>`;
+                } else {
+                    els.mPoints.innerHTML = `<span class="text-lg text-red-500 font-bold">Vẫn chưa đúng. Em hãy đọc thật kĩ giải thích bên dưới và thử lại lần nữa nhé!</span>`;
+                }
+                
+                els.mBtn.innerText = "Làm Câu Tương Tự";
+                els.mBtn.className = "btn-3d w-full font-black text-xl py-4 rounded-xl text-white bg-red-500 hover:bg-red-600 border-b-4 border-red-700";
+                
+                els.mBtn.onclick = () => {
+                    closeFeedback();
+                    isPlayingVariant = true; // Kích hoạt làm câu hỏi dự phòng
+                    loadQuestion(); 
+                };
+            }
+        }
+
+        function closeFeedback() {
+            els.modalCard.classList.remove('scale-100');
+            els.modalCard.classList.add('scale-0');
+            setTimeout(() => {
+                els.modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function showEndScreen() {
+            switchScreen('end');
+            document.getElementById('final-score').innerText = score;
+            
+            const rankEl = document.getElementById('final-rank');
+            const msgEl = document.getElementById('final-message');
+            
+            // Tối đa 29 câu hỏi * 200 điểm = 5800 điểm
+            if (score >= 5000) {
+                rankEl.innerText = "💎 Huyền Thoại Toán Học";
+                rankEl.className = "text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500";
+                msgEl.innerText = "Quá xuất sắc! Em đã hoàn thành trọn vẹn và hoàn hảo toàn bộ 8 bài tập SGK. Cô/Thầy rất tự hào!";
+            } else if (score >= 3500) {
+                rankEl.innerText = "🏆 Thợ Săn Tinh Anh";
+                rankEl.className = "text-3xl font-black text-blue-600";
+                msgEl.innerText = "Rất giỏi! Em đã nắm vững các khái niệm về biến cố. Hãy giữ vững phong độ nhé!";
+            } else {
+                rankEl.innerText = "🛡️ Tân Binh Nỗ Lực";
+                rankEl.className = "text-3xl font-black text-green-600";
+                msgEl.innerText = "Làm tốt lắm! Em đã rất nỗ lực hoàn thành tất cả các bài tập. Hãy xem lại các lỗi sai để nhớ lâu hơn nhé!";
+            }
+
+            fireConfetti();
+        }
+
+        function resetGame() {
+            document.getElementById('confetti-container').innerHTML = '';
+            document.getElementById('confetti-container').classList.add('hidden');
+            screens.end.classList.remove('bounce-in');
+            startGame();
+        }
+
+        // --- HIỆU ỨNG CONFETTI ---
+        function fireConfetti() {
+            const container = document.getElementById('confetti-container');
+            container.classList.remove('hidden');
+            container.innerHTML = '';
+            const colors = ['#f2d74e', '#95c3de', '#ff9a91', '#a2d39c'];
+            
+            for (let i = 0; i < 100; i++) {
+                let conf = document.createElement('div');
+                conf.classList.add('confetti');
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = randomElement(colors);
+                
+                let duration = Math.random() * 3 + 2;
+                let delay = Math.random() * 2;
+                
+                conf.style.animation = `fall ${duration}s ${delay}s linear forwards`;
+                container.appendChild(conf);
+            }
+        }
+
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes fall {
+                0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+                100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+    </script>
+</body>
+</html>
